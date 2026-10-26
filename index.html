@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Class 3 Post-Read</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky chapter bar, then one long reading column with interactive "desk" widgets.
+   Palette: carrier-label world. Navy ink, signal blue, tape yellow, plus green/red for pass/fail. Single light look. */
+:root{
+  --bg:#F5F7FB; --surface:#FFFFFF; --ink:#16233B; --muted:#56627C; --line:#D9DFEB;
+  --blue:#2A63D8; --blue-soft:#E6EDFC; --tape:#F5C531; --tape-soft:#FFF3C9;
+  --ok:#17825A; --ok-soft:#E2F4EA; --bad:#C23B3B; --bad-soft:#FCE8E8;
+  --code-bg:#EEF2F9; --kw:#2A63D8; --str:#17825A; --cmt:#74809A; --num:#B24F12;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:960px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+h2{font-size:clamp(1.7rem,4vw,2.3rem);font-weight:800;letter-spacing:-.02em}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0 0 .9em;max-width:68ch}
+a{color:var(--blue)}
+code,.mono{font-family:var(--mono);font-size:.9em}
+:not(pre)>code{background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+button{font:inherit;cursor:pointer}
+
+/* chapter bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));
+  padding:0 max(16px,env(safe-area-inset-left,0px));background:rgba(245,247,251,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.bar-in{max-width:960px;margin:0 auto;display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:thin}
+.bar a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:.85rem;font-weight:500;padding:5px 11px;border-radius:99px;border:1px solid transparent}
+.bar a:hover{color:var(--ink);background:var(--blue-soft)}
+.bar a.on{background:var(--ink);color:#fff}
+.prog{height:3px;background:var(--line);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)))}
+.prog i{display:block;height:100%;width:0;background:var(--tape)}
+
+/* hero */
+.hero{padding:56px 0 40px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center}
+.eyebrow{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.hero h1{font-size:clamp(2.3rem,6.4vw,4rem);font-weight:800;letter-spacing:-.03em}
+.hero h1 mark{background:linear-gradient(transparent 58%,var(--tape) 58%);color:inherit;padding:0 .08em}
+.lede{font-size:1.15rem;color:var(--muted);margin:18px 0 22px}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-size:.82rem;padding:4px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.label-card{background:var(--surface);border:2px solid var(--ink);border-radius:6px;padding:0;box-shadow:6px 6px 0 var(--tape);transform:rotate(1.2deg);max-width:340px;justify-self:center;width:100%}
+.label-card .top{background:var(--ink);color:#fff;padding:8px 14px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;letter-spacing:.06em}
+.label-card .mid{padding:14px;font-family:var(--mono);font-size:.88rem;display:grid;gap:4px}
+.label-card .mid b{font-family:var(--display);font-size:1.7rem;letter-spacing:-.01em}
+.label-card .late{margin:0 14px 14px;padding:8px 10px;background:var(--bad-soft);color:var(--bad);font-weight:600;border:1px dashed var(--bad);border-radius:4px;font-family:var(--mono);font-size:.85rem}
+.bars{height:26px;margin:0 14px 14px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 5px,var(--ink) 5px 6px,transparent 6px 10px)}
+
+section{padding:48px 0 8px;scroll-margin-top:64px}
+.kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
+.intro{color:var(--muted);margin:12px 0 26px;max-width:62ch}
+
+/* panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px}
+.row{display:grid;gap:18px}
+.two{grid-template-columns:1fr 1fr}
+.three{grid-template-columns:repeat(3,1fr)}
+.two>*,.three>*{min-width:0}
+
+/* playground */
+.desk{display:grid;grid-template-columns:1.25fr 1fr;gap:18px}
+.desk>*{min-width:0}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.btn{background:var(--ink);color:#fff;border:0;border-radius:8px;padding:9px 16px;font-weight:600}
+.btn:hover{background:#243759}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--blue-soft)}
+.sw{display:flex;gap:8px;align-items:center;font-size:.92rem;color:var(--muted)}
+.sw input{width:18px;height:18px;accent-color:var(--blue)}
+.cases{display:grid;gap:8px}
+.cc{display:grid;grid-template-columns:62px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-left:6px solid var(--line);border-radius:8px;padding:9px 12px;background:var(--surface);transition:background .25s,border-color .25s}
+.cc .id{font-family:var(--mono);font-weight:500;font-size:.88rem}
+.cc .st{font-size:.82rem;color:var(--muted);line-height:1.35}
+.cc .st b{color:var(--ink);font-weight:600}
+.tag{font-family:var(--mono);font-size:.72rem;padding:3px 8px;border-radius:99px;background:var(--code-bg);color:var(--muted);white-space:nowrap}
+.cc.flag{border-left-color:var(--bad);background:var(--bad-soft)}
+.cc.flag .tag{background:var(--bad);color:#fff}
+.cc.closed{border-left-color:var(--ok)}
+.cc.closed .tag{background:var(--ok-soft);color:var(--ok)}
+.cc.ontime{border-left-color:var(--blue)}
+.cc.ontime .tag{background:var(--blue-soft);color:var(--blue)}
+.tally{margin-top:12px;font-weight:600}
+
+/* code */
+.code{min-width:0;max-width:100%;position:relative;background:var(--code-bg);border:1px solid var(--line);border-radius:10px;margin:0}
+.code pre{margin:0;padding:16px 16px 16px;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.65;tab-size:4}
+.code .cp{position:absolute;top:8px;right:8px;font-size:.74rem;padding:3px 9px;border-radius:6px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.code .cp:hover{color:var(--ink);background:var(--blue-soft)}
+.k{color:var(--kw);font-weight:500}.s{color:var(--str)}.c{color:var(--cmt);font-style:italic}.n{color:var(--num)}
+.hl{background:var(--tape-soft);outline:1px solid var(--tape);border-radius:3px}
+
+/* path */
+.path{list-style:none;margin:0;padding:0;display:grid;gap:0;counter-reset:s}
+.path li{position:relative;padding:0 0 22px 54px;counter-increment:s}
+.path li::before{content:counter(s);position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--display);font-weight:700}
+.path li::after{content:"";position:absolute;left:17px;top:38px;bottom:2px;width:2px;background:var(--line)}
+.path li:last-child::after{display:none}
+.path li:last-child{padding-bottom:0}
+.path b{font-family:var(--display);font-size:1.1rem}
+.path span{display:block;color:var(--muted);font-size:.93rem}
+.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:6px 0 4px}
+.flow .node{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:.9rem}
+.flow .node b{display:block;font-family:var(--display);font-size:1rem;margin-bottom:2px}
+.flow .node.hot{border-color:var(--ink);box-shadow:4px 4px 0 var(--tape)}
+.flow .arr{align-self:center;color:var(--muted);font-family:var(--mono)}
+
+/* concept explorer */
+.explore{display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:start}
+.explore>*{min-width:0}
+.tabs{display:grid;gap:6px}
+.tab{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-weight:500;color:var(--ink)}
+.tab small{display:block;color:var(--muted);font-weight:400;font-size:.78rem}
+.tab:hover{background:var(--blue-soft)}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tab[aria-selected="true"] small{color:#C9D3E8}
+.cp-panel h3{font-size:1.5rem;margin-bottom:8px}
+.say{border-left:4px solid var(--tape);background:var(--tape-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0}
+.say b{font-size:.76rem;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;display:block;color:#7A5B00}
+.rem{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.rem li{padding-left:26px;position:relative}
+.rem li::before{content:"";position:absolute;left:4px;top:.55em;width:10px;height:10px;border-radius:2px;background:var(--blue)}
+
+/* traceback */
+.tb{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;gap:4px}
+.tbl{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;text-align:left;border:1px solid transparent;border-radius:8px;background:transparent;padding:7px 8px;color:var(--ink);width:100%}
+.tbl:hover{background:var(--surface)}
+.tbl[aria-pressed="true"]{background:var(--surface);border-color:var(--ink);box-shadow:3px 3px 0 var(--tape)}
+.tbl .bd{width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--muted);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:.85rem}
+.tbl[aria-pressed="true"] .bd{background:var(--ink);color:#fff}
+.tbl code{white-space:pre-wrap;word-break:break-word;background:none;padding:0;font-size:.82rem}
+.tbn{min-height:92px;margin-top:12px}
+
+/* tables */
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--ink);color:#fff;font-weight:600;font-size:.82rem;letter-spacing:.03em}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+
+/* grounding demo */
+.note-box{background:var(--tape-soft);border:1px dashed #C9A200;border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:.9rem}
+.note-box mark{background:var(--tape);padding:0 2px;border-radius:2px}
+input[type=text],textarea{width:100%;font:inherit;font-family:var(--mono);font-size:.9rem;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:var(--surface);color:var(--ink)}
+textarea{font-family:var(--body);min-height:96px;resize:vertical}
+.verdict{display:inline-block;font-family:var(--mono);font-weight:500;padding:5px 12px;border-radius:6px;margin-top:10px}
+.verdict.t{background:var(--ok-soft);color:var(--ok)}.verdict.f{background:var(--bad-soft);color:var(--bad)}
+.rules{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+.rules>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:.9rem;min-width:0}
+.rules b{display:block;font-family:var(--display);margin-bottom:4px}
+.split{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--ink);border-radius:10px;overflow:hidden;background:var(--surface)}
+.split>div{padding:16px 18px;min-width:0}
+.split>div+div{border-left:2px dashed var(--ink);background:var(--tape-soft)}
+.split b{font-family:var(--display);font-size:1.15rem;display:block;margin-bottom:4px}
+
+/* quiz */
+.q{margin-bottom:16px}
+.q .qh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.q .qt{font-weight:600;margin-bottom:10px}
+.opts{display:grid;gap:8px;margin:12px 0}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--surface)}
+.opt:hover{background:var(--blue-soft)}
+.opt input{margin-top:.3em;width:17px;height:17px;accent-color:var(--blue);flex:none}
+.opt span{min-width:0;overflow-wrap:anywhere}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.93rem}
+.fb.good{background:var(--ok-soft);color:#0E5C3D}.fb.bad{background:var(--bad-soft);color:#8A2626}
+.score{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;border-radius:99px;padding:8px 18px;font-weight:600;width:max-content;max-width:100%;margin:10px auto 0;font-size:.92rem}
+
+/* practice */
+.task{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-bottom:10px;overflow:hidden}
+.task summary{cursor:pointer;padding:12px 16px;display:flex;gap:12px;align-items:baseline;font-weight:500;list-style:none}
+.task summary::-webkit-details-marker{display:none}
+.task summary .tool{margin-left:auto;font-family:var(--mono);font-size:.74rem;color:var(--muted);white-space:nowrap}
+.task summary .no{font-family:var(--display);font-weight:800;color:var(--blue)}
+.task[open] summary{background:var(--blue-soft)}
+.task .ans{padding:14px 16px;border-top:1px solid var(--line)}
+.task .ans .code{margin-bottom:10px}
+
+footer{margin-top:56px;padding:26px;background:var(--ink);color:#fff;border-radius:14px;display:grid;gap:8px}
+footer h2{color:#fff}
+footer p{color:#C9D3E8;margin:0}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr;padding-top:36px}
+  .label-card{justify-self:start;transform:none}
+  .desk,.two,.explore{grid-template-columns:1fr}
+  .three{grid-template-columns:1fr}
+  .rules{grid-template-columns:1fr 1fr}
+  .tabs{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+}
+@media (max-width:520px){
+  .rules{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .split>div+div{border-left:0;border-top:2px dashed var(--ink)}
+  .cc{grid-template-columns:54px 1fr}
+  .cc .tag{grid-column:1 / -1;justify-self:start}
+  .task summary{flex-wrap:wrap}.task summary .tool{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+
+/* ===== Class 2 additions ===== */
+.muted{color:var(--muted)}.small{font-size:.9rem}
+.label-card .late.good{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.lab{font-family:var(--mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.fld{display:grid;gap:4px;font-size:.92rem;font-weight:600}
+input[type=date]{font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);max-width:100%}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-family:var(--mono);font-size:.85rem;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.chip:hover{background:var(--blue-soft)}
+.chip[aria-pressed="true"],.chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.code pre.out{min-height:130px;white-space:pre-wrap;word-break:break-word}
+.code pre .g{color:var(--ok);font-weight:500}.code pre .d{color:var(--cmt)}.code pre .e{color:var(--bad)}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-content:start;min-width:0}
+.callout{border-left:4px solid var(--blue);background:var(--blue-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0}
+.callout b{font-size:.76rem;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;display:block;color:var(--blue)}
+.callout.warn{border-left-color:var(--tape);background:var(--tape-soft)}.callout.warn b{color:#7A5B00}
+
+/* repo viewer */
+.flist{display:grid;gap:4px;max-height:480px;overflow:auto;padding-right:4px}
+.flist .grp{font-family:var(--mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:10px 4px 2px}
+.flist button{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-family:var(--mono);font-size:.84rem;color:var(--ink);overflow-wrap:anywhere}
+.flist button:hover{background:var(--blue-soft)}
+.flist button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.fname{font-family:var(--mono);font-weight:500;font-size:1.05rem;margin:0 0 4px;overflow-wrap:anywhere}
+.fnote{color:var(--muted);font-size:.93rem;margin:0 0 10px}
+.code.tall pre{max-height:440px;overflow:auto}
+
+/* layers */
+.layers{display:grid;gap:8px;margin:10px 0 0}
+.layers div{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--surface)}
+.layers b{font-family:var(--display);display:block}
+.layers .l1{border-color:var(--ok);background:var(--ok-soft)}.layers .l2{border-color:var(--tape);background:var(--tape-soft)}.layers .l3{border-color:var(--blue);background:var(--blue-soft)}
+
+/* order game */
+.order .ans{min-height:48px;border:1px dashed var(--line);border-radius:10px;padding:8px;background:var(--surface);margin:10px 0}
+.order .ans div{font-family:var(--mono);font-size:.84rem;padding:4px 8px;margin:3px 0;border-radius:6px;background:var(--ok-soft);border:1px solid var(--ok);overflow-wrap:anywhere}
+.order .chiprow{flex-direction:column;align-items:stretch}
+.order .chip{text-align:left;border-radius:8px;overflow-wrap:anywhere}
+.hint{min-height:24px;font-size:.93rem;margin:6px 0}.hint.good{color:var(--ok)}.hint.bad{color:var(--bad)}
+
+/* sorter */
+.sorter{margin:12px 0 26px}
+.sorter .pool{display:flex;gap:8px;flex-wrap:wrap;min-height:46px;padding:10px;border:1px dashed var(--line);border-radius:10px;background:var(--surface)}
+.sorter .pool .empty{color:var(--ok);font-weight:600}
+.sorter .bins{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.sorter .bins.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:680px){.sorter .bins{grid-template-columns:1fr 1fr}}
+@media (max-width:420px){.sorter .bins,.sorter .bins.two{grid-template-columns:1fr}}
+.sorter .bin{text-align:left;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);color:var(--ink);min-height:84px}
+.sorter .bin:hover{border-color:var(--blue)}
+.sorter .bin b{display:block;font-family:var(--display);font-size:1.02rem}
+.sorter .bin .why{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.sorter .bin .placed{display:flex;flex-wrap:wrap;gap:4px}
+.sorter .bin .placed span{font-family:var(--mono);font-size:.76rem;background:var(--ok-soft);border:1px solid var(--ok);color:var(--ok);border-radius:6px;padding:0 6px}
+.sorter .bin.flash{border-color:var(--bad);background:var(--bad-soft)}
+
+/* terminals */
+.tasks{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px}
+.tasks li{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.tasks li .ck{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;flex:none}
+.tasks li .tx{min-width:0;overflow-wrap:anywhere}
+.tasks li code,.chk li code{white-space:normal;overflow-wrap:anywhere}
+.tasks li.done{background:var(--ok-soft);border-color:var(--ok)}
+.tasks li.done .ck{background:var(--ok);border-color:var(--ok);color:#fff}
+.term{background:#16233B;color:#EAF0FB;border-radius:12px;overflow:hidden;margin:14px 0;border:1px solid #2A3A5C;font-family:var(--mono);font-size:.88rem}
+.term .bar2{background:#1F3150;padding:6px 12px;font-size:.75rem;color:#AEBBD6;display:flex;gap:6px;align-items:center}
+.term .dot{width:10px;height:10px;border-radius:50%;background:#ff6b6b}.term .dot:nth-child(2){background:#ffd166}.term .dot:nth-child(3){background:#6fe3a1}
+.term .screen{padding:12px 14px;height:280px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;scrollbar-width:thin}
+.term .line{margin:0}
+.term .p{color:#6fe3a1}.term .err{color:#ff8f86}.term .dim{color:#9FB0CE}.term .dir{color:#F5C531;font-weight:600}.term .warnline{color:#F5C531}
+.term .inputrow{display:flex;flex-wrap:wrap;gap:8px;padding:8px 14px 12px;border-top:1px solid #2A3A5C;align-items:center}
+.term .inputrow .pr{color:#6fe3a1;word-break:break-all}
+.term input{flex:1 1 140px;background:transparent;border:none;outline:none;color:#fff;font:inherit;min-width:0;width:auto}
+.term:focus-within{border-color:var(--tape);box-shadow:0 0 0 2px rgba(245,197,49,.35)}
+.fstree{font-family:var(--mono);font-size:.84rem;line-height:1.7;max-height:220px;overflow:auto}
+
+/* troubleshooting */
+.filter{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);margin:0 0 12px}
+.task .ans p{margin:0;max-width:none}
+.chk{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.chk li{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer}
+.chk li .ck{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;flex:none;margin-top:2px}
+.chk li .tx{min-width:0;overflow-wrap:anywhere}
+.chk li.done{background:var(--ok-soft);border-color:var(--ok)}
+.chk li.done .ck{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.sel2{border-color:var(--blue)}
+.fileviewer{display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:start}
+.fileviewer>*{min-width:0}
+@media (max-width:820px){.fileviewer{grid-template-columns:1fr}.flist{max-height:210px}}
+</style>
+</head>
+<body>
+
+<div class="bar" id="bar"><div class="bar-in" id="chips">
+  <a href="#try">Replay</a><a href="#built">Big picture</a><a href="#repo">Files</a><a href="#notebook">Concepts</a><a href="#setup">Order</a><a href="#games">Sort</a><a href="#practice">Practice</a><a href="#errors">Troubleshoot</a><a href="#quiz">Quiz</a><a href="#cheat">Cheat sheet</a><a href="#reflect">Check</a>
+</div></div>
+<div class="prog"><i id="progfill"></i></div>
+
+<main class="wrap">
+
+<header class="hero" id="top">
+  <div>
+    <div class="eyebrow">FDE Module 2 · Class 3 · Post-Read</div>
+    <h1>Make the shape <mark>explicit</mark></h1>
+    <p class="lede">In class you turned a loose dictionary into named records, let mypy and pytest check the connections, and made one bounded model call with a fallback. This page lets you replay it, practise it, and check what stuck. Nothing here is graded.</p>
+    <div class="meta"><span class="pill">About 60 minutes</span><span class="pill">Dataclasses, mypy, pytest</span><span class="pill">Meridian Case Intake Workbench</span></div>
+  </div>
+  <div class="label-card" aria-hidden="true">
+    <div class="top"><span>MERIDIAN</span><span>BASELINE · RECORDED</span></div>
+    <div class="mid"><span>CHECKED BY</span><b>mypy + pytest</b><span>ONE DOOR TO THE MODEL</span><span>bounded, with fallback</span></div>
+    <div class="late good">FAMILY 6 OF 6 · EVIDENCE 6 OF 7</div>
+    <div class="late">ABSTENTION 1 OF 3 CORRECT</div>
+    <div class="bars"></div>
+  </div>
+</header>
+
+<!-- ================= REPLAY ================= -->
+<section id="try">
+  <div class="kicker">Replay</div>
+  <h2>Which layer catches it?</h2>
+  <p class="intro">Pick a mistake. The desk shows where the Workbench catches it, and when. Nothing is run for real; the readout describes what the class saw.</p>
+  <div class="desk">
+    <div class="panel">
+      <div class="lab" style="margin-top:0">Five mistakes</div>
+      <div class="chiprow" id="pgMistakes" style="flex-direction:column;align-items:stretch">
+        <button class="chip" data-k="typo" aria-pressed="true">A misspelt attribute</button>
+        <button class="chip" data-k="date" aria-pressed="false">A date sent where text is expected</button>
+        <button class="chip" data-k="status" aria-pressed="false">A status not in the enum</button>
+        <button class="chip" data-k="quote" aria-pressed="false">A quote the note does not contain</button>
+        <button class="chip" data-k="key" aria-pressed="false">A key in a printout</button>
+      </div>
+      <div class="tally" id="pgTally" style="font-size:.92rem;font-weight:500;color:var(--muted)"></div>
+    </div>
+    <div class="stack">
+      <div class="lab" style="margin-top:0">The line that goes wrong</div>
+      <div class="code"><pre id="pgCode"></pre></div>
+      <div class="lab" style="margin-top:4px">What the class saw</div>
+      <div class="code"><pre class="out" id="pgOut" aria-live="polite"></pre></div>
+    </div>
+  </div>
+  <div class="say"><b>What to notice</b>Some mistakes are caught before the program runs, and some only when a row is read or a reply is checked. The earlier the catch, the cheaper the fix. A bad row is refused and listed; it never silently disappears.</div>
+</section>
+
+<!-- ================= BUILT ================= -->
+<section id="built">
+  <div class="kicker">The big picture</div>
+  <h2>What you built today</h2>
+  <p class="intro">You started class with a case that was a dictionary. You finished with named records, checks that run before and during the program, and one careful door to a model.</p>
+  <div class="flow">
+    <div class="node"><b>A dictionary</b>Accepts anything, checks nothing</div><span class="arr">→</span>
+    <div class="node hot"><b>Named records</b>Dataclasses, enums, mypy and pytest</div><span class="arr">→</span>
+    <div class="node"><b>A measured door</b>One bounded call, a fallback, a baseline</div>
+  </div>
+
+  <div class="scroll" style="margin-top:22px"><table>
+    <tr><th>Question</th><th>Before (Class 2)</th><th>After (Class 3)</th></tr>
+    <tr><td>What is a case?</td><td>A dictionary</td><td><code>SupportCase</code>, a frozen dataclass</td></tr>
+    <tr><td>Which statuses are allowed?</td><td>Any text</td><td><code>OrderStatus</code>, a <code>StrEnum</code> of four values</td></tr>
+    <tr><td>Where do model answers go?</td><td>Beside the facts</td><td><code>CaseSuggestion</code>, which cannot be passed as a fact</td></tr>
+    <tr><td>How are the connections checked?</td><td>By running the program</td><td>mypy before it runs, pytest in <code>tests/</code></td></tr>
+    <tr><td>How is the model called?</td><td>Not called</td><td>One thin client, one request per flagged note, with a recorded fallback</td></tr>
+    <tr><td>How do we know it is good?</td><td>We do not measure</td><td>A ten-case golden set, scored by hand on four measures</td></tr>
+  </table></div>
+
+  <div class="panel" style="margin-top:22px">
+    <h3 style="margin-bottom:16px">How the class climbed, in order</h3>
+    <ol class="path">
+      <li><b>Blueprints</b><span>A class holds one case. <code>__init__</code> sets it up, and <code>self</code> means the object being built.</span></li>
+      <li><b>Records that check themselves</b><span><code>@dataclass</code> writes the boilerplate. <code>frozen=True</code> makes facts read-only, and enums fix the allowed values.</span></li>
+      <li><b>Type checks before the run</b><span>mypy reads the whole program. It found a dictionary habit and a date sent where text was expected.</span></li>
+      <li><b>Promises as tests</b><span>pytest runs named checks. A broken row fails a test, and the test says which promise broke.</span></li>
+      <li><b>One door to the model</b><span>The rules never import the model. The call is bounded, and a missing key falls back to a recorded answer.</span></li>
+      <li><b>A baseline by hand</b><span>Ten golden cases, four measures, scored without a second model.</span></li>
+    </ol>
+  </div>
+  <div class="say" style="margin-top:22px"><b>The sentence to remember</b>The rules decide whether a case needs attention. The model only suggests. A person confirms.</div>
+</section>
+
+<!-- ================= REPO ================= -->
+<section id="repo">
+  <div class="kicker">Reference</div>
+  <h2>The files that changed</h2>
+  <p class="intro">Click a file to see the line that matters most for Class 3. These are the lines the lesson turns on, not the whole file. The complete files are in the Final directory from your instructor.</p>
+  <div class="fileviewer">
+    <div class="flist" id="flist" role="list" aria-label="Files in the repository"></div>
+    <div class="panel">
+      <p class="fname" id="fname"></p>
+      <p class="fnote" id="fnote"></p>
+      <div class="code"><pre id="fcode"></pre></div>
+    </div>
+  </div>
+  <div class="callout warn" style="margin-top:18px"><b>Not in Git</b><code>.venv/</code>, <code>.env</code>, <code>scratch/</code>, <code>outputs/</code>, and the <code>.mypy_cache/</code> and <code>.pytest_cache/</code> folders stay out of the repository. Your <code>.env</code> keeps any real key, and it stays on your machine.</div>
+</section>
+
+<!-- ================= CONCEPTS ================= -->
+<section id="notebook">
+  <div class="kicker">Reference</div>
+  <h2>The concept notebook</h2>
+  <p class="intro">Pick a topic. Each one gives the idea in plain words, the code from class, and what to remember.</p>
+  <div class="explore">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Concepts"></div>
+    <div class="panel cp-panel" id="cpanel" role="tabpanel"></div>
+  </div>
+</section>
+
+<!-- ================= SETUP ORDER ================= -->
+<section id="setup">
+  <div class="kicker">Rebuild it</div>
+  <h2>One suggestion, step by step</h2>
+  <p class="intro">Each step of the pipeline depends on the one before it. Click the steps in the order the program runs them, first to last.</p>
+  <div class="panel order">
+    <div class="ans" id="ordAns" aria-live="polite"></div>
+    <p class="hint" id="ordHint"></p>
+    <div class="chiprow" id="ordPool"></div>
+    <div class="ctl" style="margin:12px 0 0"><button class="btn ghost" id="ordReset">Shuffle and start over</button></div>
+  </div>
+  <div class="say"><b>Why this order?</b>The rules come first, because they decide what needs attention. The model is asked only about a flagged case that has a note. Every reply is checked before it becomes a suggestion, and the report is written last.</div>
+</section>
+
+<!-- ================= SORT IT ================= -->
+<section id="games">
+  <div class="kicker">Sort it</div>
+  <h2>Which check catches it?</h2>
+  <p class="intro">Two quick sorting games. Click an item, then click the bin where it belongs.</p>
+  <h3>When is it caught?</h3>
+  <div class="sorter" id="sortWhen"></div>
+  <div class="say"><b>Catch it as early as you can</b>A check that runs before the program saves the most time. A test catches the rule the moment someone breaks it. Only the rows and replies that reach the program at run time can fail there.</div>
+  <h3 style="margin-top:26px">Commit it or ignore it?</h3>
+  <div class="sorter" id="sortGit"></div>
+</section>
+
+<!-- ================= PRACTICE ================= -->
+<section id="practice">
+  <div class="kicker">Practice</div>
+  <h2>The take-home sheet</h2>
+  <p class="intro">Seven short tasks. Try each one in your own repository first, then open the answer to compare. <strong>Task 2 is the most useful</strong>: it shows you why the frozen record matters.</p>
+  <div id="tasks"></div>
+</section>
+
+<!-- ================= ERRORS ================= -->
+<section id="errors">
+  <div class="kicker">When it breaks</div>
+  <h2>Read the last line first</h2>
+  <p class="intro">Look for your error below. Type a word from it, such as <code>mypy</code>, <code>frozen</code> or <code>ValueError</code>, to filter the list.</p>
+  <input class="filter" id="trFilter" placeholder="Filter, for example: mypy, frozen, ValueError" aria-label="Filter the troubleshooting list">
+  <div class="scroll"><table id="trTable"><thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead><tbody></tbody></table></div>
+  <p class="muted" id="trNone" style="display:none;margin-top:10px">Nothing matches. Try a shorter word, or ask your instructor and include the last line of your error.</p>
+  <h3 style="margin:30px 0 10px">Questions beginners ask</h3>
+  <div id="faq"></div>
+</section>
+
+<!-- ================= QUIZ ================= -->
+<section id="quiz">
+  <div class="kicker">Check yourself</div>
+  <h2>Six quick questions</h2>
+  <p class="intro">One right answer each. Pick an answer, and read the reason straight away.</p>
+  <div id="quizBox"></div>
+  <div class="score" id="score" aria-live="polite">Score: 0 of 6</div>
+</section>
+
+<!-- ================= CHEAT ================= -->
+<section id="cheat">
+  <div class="kicker">Keep this</div>
+  <h2>Cheat sheet</h2>
+  <p class="intro">You do not need to memorise any of it. You need to recognise it and know what question it answers.</p>
+  <h3 style="margin:22px 0 10px">Python: records and types</h3>
+  <div class="scroll">
+  <table>
+    <tr><th>You want</th><th>Write</th><th>What it does</th></tr>
+    <tr><td>A class with setup</td><td><code>class Case:</code> and <code>def __init__(self, ...)</code></td><td>Blueprint, and the setup that runs when you call <code>Case(...)</code></td></tr>
+    <tr><td>A record with less typing</td><td><code>@dataclass</code> above the class</td><td>Writes <code>__init__</code>, <code>__repr__</code> and <code>==</code> from the fields</td></tr>
+    <tr><td>A read-only record</td><td><code>@dataclass(frozen=True)</code></td><td>Attempts to change a field raise an error</td></tr>
+    <tr><td>A list that starts empty</td><td><code>field(default_factory=list)</code></td><td>Each object gets its own list</td></tr>
+    <tr><td>A closed set of values</td><td><code>class OrderStatus(StrEnum)</code></td><td>Unknown values raise <code>ValueError</code></td></tr>
+    <tr><td>A value that may be missing</td><td><code>ShipmentInfo | None = None</code></td><td>Code using it must decide what <code>None</code> means</td></tr>
+    <tr><td>Hide a secret from printouts</td><td><code>field(default=None, repr=False)</code></td><td>The value is left out of <code>print</code> and error messages</td></tr>
+  </table>
+  </div>
+  <h3 style="margin:22px 0 10px">Checks and commands</h3>
+  <div class="scroll">
+  <table>
+    <tr><th>Task</th><th>Command</th></tr>
+    <tr><td>Type-check the source</td><td><code>mypy src</code></td></tr>
+    <tr><td>Run all tests</td><td><code>pytest</code></td></tr>
+    <tr><td>Run only the tests with a name</td><td><code>pytest -k one_row</code></td></tr>
+    <tr><td>Lint, fix, format</td><td><code>ruff check .</code> &nbsp; <code>ruff check --fix .</code> &nbsp; <code>ruff format .</code></td></tr>
+    <tr><td>Run the program, recorded mode</td><td><code>python -m meridian_workbench</code></td></tr>
+    <tr><td>Run it in live mode, one run only</td><td><code>MERIDIAN_AI_MODE=live python -m meridian_workbench</code></td></tr>
+  </table>
+  </div>
+  <div class="say"><b>The rule of the class</b>Facts come from files, evidence comes from people, suggestions come from the model, and decisions come from the rules. Keep them in separate types.</div>
+</section>
+
+<!-- ================= REFLECT ================= -->
+<section id="reflect">
+  <div class="kicker">Close the loop</div>
+  <h2>Is your repository ready?</h2>
+  <p class="intro">Tick each item only when it is true. If any item is not, fix it before the next class. Your ticks are saved in this browser only.</p>
+  <div class="row two">
+    <div>
+      <ul class="chk" id="finalChecks">
+        <li data-check="1"><span class="ck"></span><span class="tx"><code>pytest</code> reports every test passed</span></li>
+        <li data-check="2"><span class="ck"></span><span class="tx"><code>mypy src</code> says <code>Success: no issues found</code></span></li>
+        <li data-check="3"><span class="ck"></span><span class="tx"><code>ruff check .</code> says <code>All checks passed!</code></span></li>
+        <li data-check="4"><span class="ck"></span><span class="tx"><code>python -m meridian_workbench</code> still prints <code>4 of 7 cases need attention</code></span></li>
+        <li data-check="5"><span class="ck"></span><span class="tx">The rules file never imports the model client, and a test checks it</span></li>
+        <li data-check="6"><span class="ck"></span><span class="tx">My key is only in <code>.env</code>, and <code>git status</code> does not list <code>.env</code></span></li>
+        <li data-check="7"><span class="ck"></span><span class="tx">I can explain a fact, a suggestion and the four measures in my own words</span></li>
+      </ul>
+    </div>
+    <div style="min-width:0">
+      <div class="panel">
+        <h3 style="margin:0 0 8px">Today's baseline</h3>
+        <p class="small muted" style="margin:0 0 10px">Recorded answers, ten golden cases, scored by hand. Every later change is judged against these numbers.</p>
+        <div class="scroll"><table>
+          <tr><th>Measure</th><th>Result</th></tr>
+          <tr><td>Issue family correct</td><td>6 of 6</td></tr>
+          <tr><td>Evidence grounded</td><td>6 of 7</td></tr>
+          <tr><td>Unsupported claims</td><td>2</td></tr>
+          <tr><td>Abstention correct</td><td>1 of 3</td></tr>
+        </table></div>
+        <p class="small muted" style="margin:10px 0 0">The family score looks perfect. The abstention score shows the real gap.</p>
+      </div>
+    </div>
+  </div>
+  <div class="say" style="margin-top:22px"><b>Exit ticket, in your own words</b>What is the difference between a fact and a suggestion in the Workbench? Which of the four measures surprised you most, and why? What is one thing in the repository a stranger can now trust, and what makes you trust it?</div>
+</section>
+
+<footer>
+  <h2>Next up: the first change, judged against the baseline</h2>
+  <p>Next class you will change something about the model or its prompt, and run the same golden set again. A change only counts as an improvement if the four numbers move, so keep <code>golden/scoring_baseline.csv</code> safe. It is the yardstick.</p>
+</footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function setText(el, t) { if (el) el.textContent = t; }
+
+  /* ---------- progress bar and chapter highlight ---------- */
+  try {
+    var fill = $('#progfill'), chapLinks = $$('#chips a');
+    var secs = chapLinks.map(function (a) { return $(a.getAttribute('href')); }).filter(Boolean);
+    window.addEventListener('scroll', function () {
+      var h = document.documentElement;
+      var max = (h.scrollHeight - h.clientHeight) || 1;
+      if (fill) fill.style.width = Math.min(100, Math.round(h.scrollTop / max * 100)) + '%';
+      var cur = -1;
+      secs.forEach(function (s, i) { if (s.getBoundingClientRect().top < 140) cur = i; });
+      chapLinks.forEach(function (a, i) { a.classList.toggle('on', i === cur); });
+    }, { passive: true });
+  } catch (e) { /* ignore */ }
+
+  /* ---------- replay desk: which layer catches it ---------- */
+  var SCEN = {
+    typo: {
+      code: 'print(case.order_statuss)',
+      caught: 'mypy, before the program runs',
+      when: 'Before anything runs. mypy reads the code.',
+      out: '"SupportCase" has no attribute "order_statuss"\n\nThe line never runs with bad data, because the error is in the code.',
+      why: 'A dictionary fails only when the line runs, and .get hides it by returning None. A named field fails before anyone runs the program.'
+    },
+    date: {
+      code: 'days_overdue(case.promised_date)   # days_overdue expects text',
+      caught: 'mypy, before the program runs',
+      when: 'Before anything runs, at the call site.',
+      out: 'Argument 1 to "days_overdue" has incompatible type "date"; expected "str"\n\nThe caller already holds a real date, so the function is the part that is out of date.',
+      why: 'The date was turned from text once, when the row loaded. Turning it back into text just to turn it into a date again would be a mistake.'
+    },
+    status: {
+      code: 'OrderStatus("RETURNED")',
+      caught: 'the loader, when the row is read',
+      when: 'When the row is read, on the line that loads it.',
+      out: "ValueError: 'RETURNED' is not a valid OrderStatus\n\nThe loader refuses the row, keeps it with its row number and reason, and the program carries on.",
+      why: 'The error sits closest to the bad row, so a made-up status never reaches a report looking like a fact.'
+    },
+    quote: {
+      code: 'evidence_span not found in note text',
+      caught: 'the program, when the model reply is checked',
+      when: 'When the reply comes back, before it becomes a suggestion.',
+      out: 'Warning: the quoted evidence is not in the note.\nreview_required is forced to True.',
+      why: 'The checks apply to whatever the model returns, so a convincing answer still has to be grounded in the note.'
+    },
+    key: {
+      code: 'print(settings)',
+      caught: 'the settings field itself',
+      when: 'Whenever someone prints the settings, or an error shows them.',
+      out: 'The key is left out of the printout. Searching the output for the key finds nothing.',
+      why: 'field(default=None, repr=False) hides the key. A key in a printout has leaked, and must be replaced at once.'
+    }
+  };
+  function showScen(k) {
+    var s = SCEN[k];
+    $$('#pgMistakes .chip').forEach(function (c) { c.setAttribute('aria-pressed', c.dataset.k === k ? 'true' : 'false'); });
+    setText($('#pgCode'), s.code);
+    setText($('#pgOut'), 'Caught by: ' + s.caught + '\nWhen: ' + s.when + '\n\n' + s.out + '\n\nWhy it matters: ' + s.why);
+    setText($('#pgTally'), 'Catch it earlier and the fix is cheaper.');
+  }
+  $$('#pgMistakes .chip').forEach(function (c) { c.addEventListener('click', function () { showScen(c.dataset.k); }); });
+  showScen('typo');
+
+  /* ---------- the files that changed ---------- */
+  var FILES = [
+    { n: 'domain.py', tag: 'new', note: 'Every named record type lives here. SupportCase is a frozen fact. CaseSuggestion has its own type, so it cannot be mixed with facts.',
+      code: '@dataclass(frozen=True)\nclass SupportCase:\n    case_id: str\n    order_status: OrderStatus\n    promised_date: date\n\n# CaseSuggestion: review_required defaults to True\n# __post_init__ refuses an empty case_id or source_note_id' },
+    { n: 'rules.py', tag: 'replaced', note: 'Decides, and nothing else. It never reads files, settings or the model, so it is tested with no key and no internet.',
+      code: 'CLOSED_STATUSES = frozenset({OrderStatus.DELIVERED, OrderStatus.CANCELLED})\n\ndef needs_attention(case: SupportCase, ...) -> AttentionDecision:\n    # returns the flag, the reason and the days together, as named fields' },
+    { n: 'llm_client.py', tag: 'new', note: 'The thin door to the model. One request, three limits, and one family of errors that the caller can catch together.',
+      code: 'class LlmError(Exception): ...\nclass MissingApiKeyError(LlmError): ...\nclass LlmCallFailed(LlmError): ...\n\n# max_tokens caps the length of the reply\n# timeout caps the wait\n# max_retries=1 caps the retries' },
+    { n: 'ai_client.py', tag: 'replaced', note: 'Asks the model, checks the reply, and falls back to the recorded answer when the live call cannot run.',
+      code: '# caller defaults to the real call_model\n# tests pass a fake caller, so no key or network is needed\n# LlmError in live mode -> recorded answer, label recorded_fallback' },
+    { n: 'pipeline.py', tag: 'replaced', note: 'Runs the steps in order. The model is asked only about a case the rules flagged, and that has a note.',
+      code: '# needs_interpretation and the case has a note -> one bounded call\n# no note -> no call at all' },
+    { n: 'config.py', tag: 'replaced', note: 'Settings come from the environment or .env. The key is hidden from printouts.',
+      code: '# reads MERIDIAN_LLM_API_KEY from the environment or .env\napi_key: str | None = field(default=None, repr=False)' },
+    { n: 'tests/test_domain.py', tag: 'new', note: 'Promises about the records. The frozen check passes only if Python refuses the change.',
+      code: 'with pytest.raises(FrozenInstanceError):\n    case.order_status = OrderStatus.DELIVERED  # type: ignore[misc]' },
+    { n: 'tests/test_ai_client.py', tag: 'new', note: 'Tests the suggestion step with fake callers. The last test is the boundary check.',
+      code: 'def test_rules_file_stays_free_of_ai_code():\n    # rules.py must not mention ai_client, llm_client, anthropic, config or loaders' },
+    { n: '.gitignore', tag: 'updated', note: 'Git skips the practice folder, the secret, the caches and the outputs.',
+      code: '.venv/\n.env\nscratch/\noutputs/\n.mypy_cache/\n.pytest_cache/\n__pycache__/' },
+    { n: 'docs/terminology.md', tag: 'new', note: 'One page that says what each word means in the report, so the engineer, the ops lead and the reviewer read it the same way.',
+      code: '| Source-of-truth fact | ... |' }
+  ];
+  var flist = $('#flist');
+  FILES.forEach(function (f, i) {
+    var b = document.createElement('button');
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = f.n + '  (' + f.tag + ')';
+    b.addEventListener('click', function () { showFile(i); });
+    flist.appendChild(b);
+  });
+  function showFile(i) {
+    var f = FILES[i];
+    $$('#flist button').forEach(function (x, j) { x.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+    setText($('#fname'), f.n);
+    setText($('#fnote'), f.note);
+    setText($('#fcode'), f.code);
+  }
+  showFile(0);
+
+  /* ---------- concept notebook ---------- */
+  var TOPICS = [
+    { t: 'Class and object', s: 'blueprint', say: 'A class is a blueprint. An object is one filled-in form made from it. __init__ runs when you call Case(...), and self means the object being built.',
+      code: 'class Case:\n    def __init__(self, case_id, order_status):\n        self.case_id = case_id\n        self.order_status = order_status\n\nc = Case("C-1002", "SHIPPED")\nprint(c.order_status)   # SHIPPED',
+      rem: 'Each object holds its own values. Writing the setup by hand is where typos hide.' },
+    { t: 'Dataclass', s: 'less typing', say: '@dataclass is a decorator: a line above the class that adds behaviour. Python writes __init__, __repr__ and == from the fields you list.',
+      code: 'from dataclasses import dataclass\n\n@dataclass\nclass Case:\n    case_id: str\n    order_status: str\n\nCase("C-1", "SHIPPED") == Case("C-1", "SHIPPED")   # True',
+      rem: 'Equality now compares the values of the fields, not the place in memory.' },
+    { t: 'Frozen', s: 'read-only', say: 'frozen=True makes an object read-only once it is built. Every fact type in the Workbench is frozen, because a source fact should never change by accident.',
+      code: '@dataclass(frozen=True)\nclass SupportCase:\n    case_id: str\n    order_status: OrderStatus\n    promised_date: date\n\ncase.order_status = OrderStatus.DELIVERED   # raises FrozenInstanceError',
+      rem: 'A changed fact is a bug. Build a new object instead of editing the old one.' },
+    { t: 'default_factory', s: 'empty list', say: 'A default written in the class is created once, when Python reads the class. A list default would be shared by every object.',
+      code: '@dataclass\nclass Batch:\n    cases: list[SupportCase] = field(default_factory=list)\n\nx = Batch(); y = Batch()\n# each Batch gets its own list; x.cases does not appear in y',
+      rem: 'For a list, use default_factory=list. A plain value such as None or "" can be written directly.' },
+    { t: 'StrEnum', s: 'closed values', say: 'An enum lists the allowed values once. StrEnum behaves like a string, so it prints and compares like one, and writes to JSON as plain text.',
+      code: 'class OrderStatus(StrEnum):\n    SHIPPED = "SHIPPED"\n    DELIVERED = "DELIVERED"\n    CANCELLED = "CANCELLED"\n    # ...the four allowed values are listed in domain.py\n\nOrderStatus("RETURNED")   # ValueError: \'RETURNED\' is not a valid OrderStatus',
+      rem: 'A misspelt status is caught on the line that loads the row, not in a report.' },
+    { t: 'Optional: | None', s: 'may be missing', say: 'A type with | None says the value may be missing. Read ShipmentInfo | None as "a ShipmentInfo, or None". Code using it must decide what None means.',
+      code: '@dataclass(frozen=True)\nclass CaseContext:\n    case: SupportCase\n    shipment: ShipmentInfo | None = None',
+      rem: 'mypy insists on the check. An order that has not shipped has no shipment, and that is normal.' },
+    { t: 'Type hints and mypy', s: 'a proofreader', say: 'Python ignores type hints when it runs. mypy reads the whole program without running it, and checks what each function accepts against what every caller supplies.',
+      code: 'rules.py:18: error: Value of type SupportCase is not indexable\nrules.py:20: error: Argument 1 to days_overdue has incompatible type date; expected str',
+      rem: 'Read a mypy line left to right: the file and line, the word error, the plain message, and the kind of mismatch.' },
+    { t: 'Composition and inheritance', s: 'has or is', say: 'Inheritance means "is a kind of". Composition means "has". A context is not a kind of case; it has a case. So a context uses fields, not a subclass.',
+      code: '# composition: a context HAS a case\nclass CaseContext:\n    case: SupportCase\n\n# inheritance: a MissingApiKeyError IS an LlmError\nclass MissingApiKeyError(LlmError): ...',
+      rem: 'Ask the test of two words: is it a kind of, or does it have? When the answer is "has", use fields.' },
+    { t: 'pytest', s: 'named promises', say: 'pytest runs every function whose name starts with test_. A test is an ordinary function with an assert. pytest.raises says "this line must raise this error".',
+      code: 'def test_frozen_case_cannot_change():\n    with pytest.raises(FrozenInstanceError):\n        case.order_status = OrderStatus.DELIVERED  # type: ignore[misc]',
+      rem: 'A test you have never seen fail is a test you cannot trust. Break the data on purpose once.' },
+    { t: 'Thin client and fallback', s: 'one bounded door', say: 'The model code sits behind one thin client. Each call is bounded: a cap on the reply length, a cap on the wait, and a cap on retries. A failure never stops the program.',
+      code: '# three limits on every call\nmax_tokens   # caps the length of the reply\ntimeout      # caps the wait\nmax_retries  # caps the retries: one request, one retry at most\n\n# any LlmError -> recorded answer, label recorded_fallback',
+      rem: 'The label and the reason are both recorded, so nobody mistakes a fallback for a live answer.' },
+    { t: 'Golden set and four measures', s: 'measure by hand', say: 'A golden set is a small collection of cases where we already know what a good answer looks like. Four measures answer four different questions about the same answers.',
+      code: 'issue_family_correct    is the label right?\nevidence_grounded       can a reviewer check the quote?\nunsupported_claims     does the summary invent anything?\nabstention_correct     does the model stop when it cannot tell?',
+      rem: 'A single score would hide the other three. The family score was 6 of 6, and abstention was 1 of 3.' }
+  ];
+  var tabs = $('#tabs'), cpanel = $('#cpanel');
+  function showTopic(i) {
+    var T = TOPICS[i];
+    $$('#tabs .tab').forEach(function (b, j) {
+      b.setAttribute('aria-selected', j === i ? 'true' : 'false');
+    });
+    cpanel.innerHTML = '';
+    var h = document.createElement('h3'); h.textContent = T.t;
+    var say = document.createElement('div'); say.className = 'say'; say.innerHTML = '<b>In plain words</b>';
+    var sp = document.createElement('span'); sp.textContent = T.say; say.appendChild(sp);
+    var code = document.createElement('div'); code.className = 'code';
+    var pre = document.createElement('pre'); pre.textContent = T.code; code.appendChild(pre);
+    var rem = document.createElement('ul'); rem.className = 'rem';
+    var li = document.createElement('li'); li.textContent = T.rem; rem.appendChild(li);
+    cpanel.appendChild(h); cpanel.appendChild(say); cpanel.appendChild(code); cpanel.appendChild(rem);
+  }
+  TOPICS.forEach(function (T, i) {
+    var b = document.createElement('button');
+    b.className = 'tab'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false');
+    b.innerHTML = esc(T.t) + '<small>' + esc(T.s) + '</small>';
+    b.addEventListener('click', function () { showTopic(i); });
+    tabs.appendChild(b);
+  });
+  showTopic(0);
+
+  /* ---------- order game: one suggestion, step by step ---------- */
+  var STEPS = [
+    'Load the source rows. Refuse bad rows, and keep each with its reason',
+    'Let the rules decide which cases need attention',
+    'Check the case is flagged and has a note. No note, no call',
+    'Make one bounded call to the model, with limits on length, time and retries',
+    'If the call cannot run, read the recorded answer and label it recorded_fallback',
+    'Check the issue family is on the allowed list, and the quote is in the note',
+    'Build a CaseSuggestion that carries its case_id and source_note_id',
+    'Write the facts and suggestions to the report, under separate keys'
+  ];
+  var ordOrder = [], ordTurn = 0;
+  var ordPool = $('#ordPool'), ordAns = $('#ordAns'), ordHint = $('#ordHint');
+  function ordShuffle() {
+    var idx = STEPS.map(function (_, i) { return i; });
+    for (var i = idx.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+    ordOrder = []; ordTurn = 0;
+    ordPool.innerHTML = ''; ordAns.innerHTML = ''; ordHint.className = 'hint'; ordHint.textContent = '';
+    idx.forEach(function (s) {
+      var c = document.createElement('button'); c.className = 'chip'; c.textContent = STEPS[s]; c.setAttribute('aria-pressed', 'false');
+      c.addEventListener('click', function () {
+        if (s === ordOrder.length) {
+          ordOrder.push(s); c.remove();
+          var row = document.createElement('div'); row.textContent = ordOrder.length + '. ' + STEPS[s]; ordAns.appendChild(row);
+          if (ordOrder.length === STEPS.length) { ordHint.className = 'hint good'; ordHint.textContent = 'In order. The rules come first, and the report is written last.'; }
+          else { ordHint.className = 'hint'; ordHint.textContent = 'Correct. Now the next step.'; }
+        } else {
+          ordHint.className = 'hint bad';
+          ordHint.textContent = 'Not yet. Think about what must exist before this step can run.';
+          c.classList.add('sel'); setTimeout(function () { c.classList.remove('sel'); }, 500);
+        }
+      });
+      ordPool.appendChild(c);
+    });
+  }
+  $('#ordReset').addEventListener('click', ordShuffle);
+  ordShuffle();
+
+  /* ---------- sorters ---------- */
+  function sorter(el, bins, items, doneMsg) {
+    var sel = null, left = items.length, wrong = 0;
+    var pool = document.createElement('div'); pool.className = 'pool';
+    var hint = document.createElement('p'); hint.className = 'hint';
+    var grid = document.createElement('div'); grid.className = 'bins';
+    var chips = [];
+    items.forEach(function (it) {
+      var c = document.createElement('button'); c.className = 'chip'; c.textContent = it.t; c.setAttribute('aria-pressed', 'false');
+      c.addEventListener('click', function () {
+        chips.forEach(function (x) { x.classList.remove('sel'); x.setAttribute('aria-pressed', 'false'); });
+        sel = it; c.classList.add('sel'); c.setAttribute('aria-pressed', 'true');
+        hint.className = 'hint'; hint.textContent = 'Now click the bin for this item.';
+      });
+      it.chip = c; chips.push(c); pool.appendChild(c);
+    });
+    bins.forEach(function (b) {
+      var d = document.createElement('button'); d.className = 'bin';
+      d.innerHTML = '<b>' + esc(b.label) + '</b><span class="why">' + esc(b.sub || '') + '</span><span class="placed"></span>';
+      d.addEventListener('click', function () {
+        if (!sel) { hint.className = 'hint'; hint.textContent = 'Click an item first, then a bin.'; return; }
+        var it = sel;
+        if (it.bin === b.k) {
+          var s = document.createElement('span'); s.textContent = it.t; $('.placed', d).appendChild(s);
+          pool.removeChild(it.chip); sel = null; left--;
+          hint.className = 'hint good'; hint.textContent = 'Correct. ' + it.why;
+          if (!left) {
+            var e = document.createElement('span'); e.className = 'empty'; e.textContent = 'All sorted.'; pool.appendChild(e);
+            hint.textContent = (wrong === 0 ? 'Perfect, with no mistakes. ' : 'All sorted, with ' + wrong + ' wrong ' + (wrong === 1 ? 'try' : 'tries') + '. ') + (doneMsg || '');
+          }
+        } else {
+          wrong++; d.classList.add('flash'); setTimeout(function () { d.classList.remove('flash'); }, 500);
+          hint.className = 'hint bad'; hint.textContent = 'Not quite. ' + (it.hint || 'Think about when the value is known.');
+        }
+      });
+      grid.appendChild(d);
+    });
+    el.appendChild(pool); el.appendChild(hint); el.appendChild(grid);
+  }
+  sorter($('#sortWhen'), [
+    { k: 'mypy', label: 'mypy', sub: 'reads the code, before any run' },
+    { k: 'pytest', label: 'pytest', sub: 'runs the named promises' },
+    { k: 'runtime', label: 'At run time', sub: 'when a row or reply arrives' }
+  ], [
+    { t: 'a misspelt attribute, case.order_statuss', bin: 'mypy', why: 'mypy reads the code and refuses it before it runs.', hint: 'Does it need the data, or only the code?' },
+    { t: 'a date passed where text is expected', bin: 'mypy', why: 'The mismatch is visible from the code alone.', hint: 'Does it need the data, or only the code?' },
+    { t: 'a status RETURNED that is not in the enum', bin: 'runtime', why: 'The value arrives in a row, so only the loader can see it.', hint: 'Where does the value come from?' },
+    { t: 'a frozen case that someone changes', bin: 'pytest', why: 'The test with pytest.raises states the promise.', hint: 'Which check states the promise?' },
+    { t: 'a quote the model made up', bin: 'runtime', why: 'The reply exists only when the call returns, so the check runs then.', hint: 'When does the reply arrive?' },
+    { t: 'a rule change that makes the count 6 instead of 7', bin: 'pytest', why: 'The test expects 7 cases, and reports 6.', hint: 'Which check states the expected count?' }
+  ], 'Early checks save the most time. Run-time checks catch what the data and the model bring in.');
+
+  sorter($('#sortGit'), [
+    { k: 'commit', label: 'Commit', sub: 'Git keeps it' },
+    { k: 'ignore', label: 'Ignore', sub: 'Git skips it' }
+  ], [
+    { t: 'src/meridian_workbench/domain.py', bin: 'commit', why: 'It is part of the project.', hint: 'Is it part of the project, or made by running it?' },
+    { t: 'tests/test_domain.py', bin: 'commit', why: 'The promises are part of the project.', hint: 'Is it part of the project, or made by running it?' },
+    { t: 'docs/terminology.md', bin: 'commit', why: 'Everyone reads it, so it is shared.', hint: 'Should everyone on the team read it?' },
+    { t: '.env, with a real key', bin: 'ignore', why: 'A secret never goes in Git.', hint: 'Does it give access to something?' },
+    { t: 'scratch/scratch_case.py', bin: 'ignore', why: 'Practice files stay out of the project.', hint: 'Is it practice, or part of the project?' },
+    { t: '.mypy_cache/', bin: 'ignore', why: 'Tools rebuild it by running them.', hint: 'Is it made by running a tool?' },
+    { t: 'outputs/attention_report.json', bin: 'ignore', why: 'The program rebuilds it on every run.', hint: 'Is it made by running the program?' }
+  ], 'Commit the project, ignore what the tools and secrets make.');
+
+  /* ---------- take-home sheet ---------- */
+  var TASKS = [
+    { t: 'Write a class by hand', tool: 'python', ans: 'Write a Case class with two fields, then print one of them. Predict the output before you run it.',
+      code: 'class Case:\n    def __init__(self, case_id, order_status):\n        self.case_id = case_id\n        self.order_status = order_status\n\nprint(Case("C-1", "SHIPPED").order_status)   # SHIPPED' },
+    { t: 'Turn it into a dataclass, then test equality', tool: 'dataclass', ans: 'Two objects with the same values should be equal. Write one assert that proves it. Then remove @dataclass and watch the assert fail.',
+      code: 'assert Case("C-1", "SHIPPED") == Case("C-1", "SHIPPED")' },
+    { t: 'Freeze a record and try to change it', tool: 'frozen', ans: 'Expect FrozenInstanceError. Then write the test that proves Python refuses the change.',
+      code: 'with pytest.raises(FrozenInstanceError):\n    case.order_status = OrderStatus.DELIVERED  # type: ignore[misc]' },
+    { t: 'Prove an unknown status is refused', tool: 'StrEnum', ans: 'Write a test that OrderStatus("RETURNED") raises ValueError. Run it with pytest -k status to see only that test.',
+      code: 'with pytest.raises(ValueError):\n    OrderStatus("RETURNED")' },
+    { t: 'Read a mypy error', tool: 'mypy', ans: 'Write down the file, the line, the message and the fix. For example, case["order_status"] becomes case.order_status on a dataclass.' },
+    { t: 'Watch the fallback', tool: 'live mode', ans: 'Run the program with MERIDIAN_AI_MODE=live and no key. Open outputs/attention_report.json, find meta.fallback_reason, and say in one sentence what it means.' },
+    { t: 'Score one golden case by hand', tool: 'measures', ans: 'Choose G-01. For each of the four measures, mark yes or no, and write one sentence that explains the mark. Compare with the instructor key only after you have finished.' }
+  ];
+  var tasksBox = $('#tasks');
+  TASKS.forEach(function (T, i) {
+    var d = document.createElement('details'); d.className = 'task';
+    var s = document.createElement('summary');
+    s.innerHTML = '<span class="no">' + (i + 1) + '</span><span>' + esc(T.t) + '</span><span class="tool">' + esc(T.tool) + '</span>';
+    var a = document.createElement('div'); a.className = 'ans';
+    var p = document.createElement('p'); p.textContent = T.ans; a.appendChild(p);
+    if (T.code) { var c = document.createElement('div'); c.className = 'code'; var pre = document.createElement('pre'); pre.textContent = T.code; c.appendChild(pre); a.appendChild(c); }
+    d.appendChild(s); d.appendChild(a); tasksBox.appendChild(d);
+  });
+
+  /* ---------- troubleshooting ---------- */
+  var TROUBLE = [
+    ['mypy: Value of type SupportCase is not indexable', 'case["..."] used on a dataclass', 'Use a dot: case.order_status'],
+    ['mypy: Argument 1 has incompatible type "date"; expected "str"', 'A function asks for text, but the caller holds a date', 'Change the function to take a date. The caller is right.'],
+    ['mypy: Item "None" ... has no attribute', 'An optional field is used without a check', 'Decide what None means, then check for it, such as: if shipment is None'],
+    ['FrozenInstanceError', 'Code tried to change a frozen fact', 'Build a new object instead of editing the fact'],
+    ["ValueError: 'RETURNED' is not a valid OrderStatus", 'A row holds a status that is not in the enum', 'The row is refused and listed. Fix the data, or agree a new status before adding it'],
+    ['ValueError: mutable default for field is not allowed', 'A list written as a plain default', 'Use field(default_factory=list)'],
+    ['pytest: expected 7 cases, found 6', 'A row was rejected while loading', 'Read the rejected row and its reason, then fix the data, not the test'],
+    ['The label says recorded_fallback', 'The live call did not run: no key, a wrong key, or a network problem', 'Read meta.fallback_reason in outputs/attention_report.json. The class can carry on'],
+    ["ModuleNotFoundError: No module named 'pytest'", 'The environment is not active, or the requirements are not installed', 'Activate .venv, then run python -m pip install -r requirements.txt']
+  ];
+  var trBody = $('#trTable tbody');
+  TROUBLE.forEach(function (r) {
+    var tr = document.createElement('tr');
+    r.forEach(function (cell, i) { var td = document.createElement('td'); if (i === 0) td.innerHTML = '<code>' + esc(cell) + '</code>'; else td.textContent = cell; tr.appendChild(td); });
+    trBody.appendChild(tr);
+  });
+  $('#trFilter').addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase(), shown = 0;
+    $$('#trTable tbody tr').forEach(function (tr) {
+      var ok = !q || tr.textContent.toLowerCase().indexOf(q) > -1;
+      tr.style.display = ok ? '' : 'none'; if (ok) shown++;
+    });
+    $('#trNone').style.display = shown ? 'none' : '';
+  });
+
+  var FAQ = [
+    ['Why not keep the dictionary and add comments?', 'Comments are not checked. mypy and pytest read the types and the promises, so a mistake shows up before anyone runs the program.'],
+    ['Do I need an API key to finish class?', 'No. Without one the program uses the recorded answers and says recorded_fallback, so every step still works.'],
+    ['Can a suggestion ever become a fact?', 'Only after a person confirms it, and then as a new source record. A suggestion is never edited into a fact.']
+  ];
+  var faq = $('#faq');
+  FAQ.forEach(function (f) {
+    var d = document.createElement('details'); d.className = 'task';
+    var s = document.createElement('summary'); s.innerHTML = '<span></span><span>' + esc(f[0]) + '</span>';
+    var a = document.createElement('div'); a.className = 'ans'; var p = document.createElement('p'); p.textContent = f[1]; a.appendChild(p);
+    d.appendChild(s); d.appendChild(a); faq.appendChild(d);
+  });
+
+  /* ---------- quiz ---------- */
+  var QUIZ = [
+    { q: 'What does frozen=True do on a dataclass?', o: ['It makes the class run faster', 'It saves the object to disk', 'It makes the object read-only after it is built', 'It turns the object into text'], a: 2, e: 'A frozen object refuses changes to its fields. That protects facts from accidental edits.' },
+    { q: 'Why does a list field need default_factory=list?', o: ['Without it, every object would share one list', 'It sorts the list automatically', 'Python does not allow lists in dataclasses at all', 'It stores the list in the .env file'], a: 0, e: 'A list written as a plain default is created once and shared. default_factory creates a new one for each object.' },
+    { q: 'A row says RETURNED, but the enum has no such value. What happens when the row loads?', o: ['It is silently accepted', 'It becomes None', 'It is written to the report as a new status', 'A ValueError is raised on the line that loads it'], a: 3, e: 'The error sits closest to the bad row. The loader refuses the row and keeps its reason.' },
+    { q: 'mypy says "Value of type SupportCase is not indexable" for case["order_status"]. What is the fix?', o: ['Add # type: ignore above the line', 'Use case.order_status, the dot form for a dataclass', 'Convert the case to a string first', 'Delete the rules file'], a: 1, e: 'A dataclass uses dots. The square brackets only work on dictionaries.' },
+    { q: 'Why does the rules file never import ai_client?', o: ['Because ai_client is too slow for rules', 'Because Python forbids importing two modules', 'Because the rules must stay testable with no key or internet, and the model only suggests', 'Because the rules file is written in another language'], a: 2, e: 'The rules decide, and they must be testable with no key and no internet. The model only suggests.' },
+    { q: 'Why measure four things on the golden set instead of one score?', o: ['Because four is the number of golden cases', 'Because pytest needs four tests', 'Because mypy only counts four errors', 'Because a single score would hide problems, such as the 1 of 3 on abstention'], a: 3, e: 'The family score was 6 of 6, which looks perfect. The abstention score shows the real gap.' }
+  ];
+  var quizBox = $('#quizBox'), scoreEl = $('#score'), answered = 0, right = 0;
+  QUIZ.forEach(function (it, qi) {
+    var q = document.createElement('div'); q.className = 'q';
+    var qh = document.createElement('div'); qh.className = 'qh'; qh.innerHTML = '<span>Question ' + (qi + 1) + ' of ' + QUIZ.length + '</span>';
+    var qt = document.createElement('p'); qt.className = 'qt'; qt.textContent = it.q;
+    var opts = document.createElement('div'); opts.className = 'opts';
+    var fb = document.createElement('div'); fb.className = 'fb'; fb.style.display = 'none';
+    var btns = [];
+    it.o.forEach(function (txt, oi) {
+      var b = document.createElement('button'); b.className = 'opt'; b.setAttribute('type', 'button');
+      var sp = document.createElement('span'); sp.textContent = txt; b.appendChild(sp); btns.push(b);
+      b.addEventListener('click', function () {
+        if (btns.some(function (x) { return x.disabled; })) return;
+        btns.forEach(function (x) { x.disabled = true; });
+        answered++;
+        fb.style.display = '';
+        if (oi === it.a) { b.classList.add('right'); right++; fb.className = 'fb good'; fb.textContent = 'Correct. ' + it.e; }
+        else { b.classList.add('wrong'); btns[it.a].classList.add('right'); fb.className = 'fb bad'; fb.textContent = 'Not quite. ' + it.e; }
+        setText(scoreEl, 'Score: ' + right + ' of ' + QUIZ.length + (answered === QUIZ.length ? (right === QUIZ.length ? '. Great work.' : '. Re-read the sections for any you missed, then reload the page to try again.') : ''));
+      });
+      opts.appendChild(b);
+    });
+    q.appendChild(qh); q.appendChild(qt); q.appendChild(opts); q.appendChild(fb); quizBox.appendChild(q);
+  });
+
+  /* ---------- reflect checklist (saved in this browser only) ---------- */
+  var checks = {};
+  try { checks = JSON.parse(localStorage.getItem('c3postread') || '{}') || {}; } catch (e) { checks = {}; }
+  $$('#finalChecks li').forEach(function (li) {
+    var ck = $('.ck', li);
+    function paint(on) { li.classList.toggle('done', on); ck.textContent = on ? '✓' : ''; }
+    paint(!!checks[li.dataset.check]);
+    li.addEventListener('click', function () {
+      checks[li.dataset.check] = !checks[li.dataset.check];
+      paint(!!checks[li.dataset.check]);
+      try { localStorage.setItem('c3postread', JSON.stringify(checks)); } catch (e) { /* ignore */ }
+    });
+  });
+})();
+
+</script>
+</body>
+</html>
